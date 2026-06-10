@@ -2,12 +2,12 @@
 
 [English](README.en.md)
 
-一个 Claude Code 的 slash command skill，用于交互式创建 Git commit。
+一个 Claude Code 的 slash command skill，用于交互式创建 Git commit；在 Codex 等没有多选框工具的环境中，会退化为编号文本选择。
 
 ## 功能
 
 - 自动识别目标仓库（支持多仓库工作区）
-- **交互式文件选择**：使用多选框勾选要提交的文件，支持按目录批量选择
+- **文件选择**：优先使用多选框，工具不可用时使用编号文本选择，支持按目录批量选择
 - **分支名作为 scope**：commit message 格式为 `type(branch): description`，自动获取当前分支名
 - 严格的确认流程：选文件 → 确认内容 → 确认提交
 - 不添加 Co-Authored-By 等无关信息
@@ -46,7 +46,7 @@ chore(branch): maintenance task
 
 ## 配置
 
-无需额外配置。Skill 自动使用 `AskUserQuestion` 工具提供交互式文件选择。
+无需额外配置。Skill 会优先使用 `AskUserQuestion` 提供交互式文件选择；如果当前环境不支持该工具，则列出编号选项并等待用户回复数字、路径或 `all`。
 
 ## 许可证
 

@@ -2,7 +2,7 @@
 name: commit
 description: Use when the user invokes /commit or asks to create a Git commit after coding. Select the target repository, show changed files for user selection, generate or validate a conventional commit message of 30 words or fewer, ask for explicit confirmation, then create exactly one commit containing only the selected files. Also use for Chinese requests such as 提交代码, 写 commit, 生成提交, or 选择文件提交.
 allowed-tools: Bash(git:*), Bash(pwd), Bash(find:*), Bash(test:*), Bash(ls:*), AskUserQuestion
-argument-hint: [repo-path] [commit-message]
+argument-hint: "[repo-path] [commit-message]"
 ---
 
 # Commit Selected Changes
@@ -29,14 +29,21 @@ Before staging or committing:
 
 1. Run `git -C <repo> status --short`.
 2. If there are no changes, say so and stop.
-3. Use AskUserQuestion to present file selection as an interactive multiSelect question. Group changed files by directory — if multiple files share the same parent directory, offer the directory as one option in addition to individual file options. Include staged, unstaged, deleted, renamed, copied, and untracked files.
+3. Prefer an interactive multi-select tool when the runtime provides one, such as AskUserQuestion. If no such tool is available, use the text fallback below instead of stopping.
 
-AskUserQuestion format:
+Interactive selection format:
 - Use multiSelect: true so the user can pick multiple items.
 - Each option's label should be the file path or directory path, description should note the change type (modified, untracked, deleted, etc.) and the number of files if it's a directory group.
 - If files are already staged, note that in the description.
 - If fewer than 4 items total, list individual files only. If 4 or more, group by directory where possible, but still offer individual files as separate options if they are important changes.
 - The user can always type custom paths via "Other".
+
+Text fallback when interactive selection is unavailable:
+- Print a numbered list of changed file and directory options.
+- Ask the user to reply with numbers, exact paths, directory labels, or `all`.
+- Treat directory selections as all changed files under that directory.
+- Echo the resolved file list back to the user and ask for explicit confirmation before staging.
+- If the user's reply is ambiguous, ask a short clarification question instead of guessing.
 
 Do not continue until at least one file is selected.
 
