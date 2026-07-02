@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Use when the user invokes /commit or asks to create a Git commit after coding. Select the target repository, show changed files for user selection, generate or validate a conventional commit message of 30 words or fewer, ask for explicit confirmation, then create exactly one commit containing only the selected files. Also use for Chinese requests such as 提交代码, 写 commit, 生成提交, or 选择文件提交.
+description: Use when the user invokes /commit or asks to create a Git commit after coding. Select the target repository, show changed files for user selection, generate or validate a conventional commit message of 30 words or fewer, ask for explicit confirmation, then create exactly one commit containing only the selected files and push it to the configured remote. Also use for Chinese requests such as 提交代码, 写 commit, 生成提交, 提交并推送, or 选择文件提交.
 allowed-tools: Bash(git:*), Bash(pwd), Bash(find:*), Bash(test:*), Bash(ls:*), AskUserQuestion
 argument-hint: "[repo-path] [commit-message]"
 ---
@@ -22,6 +22,17 @@ Resolve the target repository conservatively:
 6. Never commit from a parent directory that is not itself a Git work tree.
 
 After resolving the repository, use `git -C <repo> ...` for every Git operation.
+
+## Remote Target
+
+After resolving the repository, determine the push target:
+
+1. Run `git -C <repo> rev-parse --abbrev-ref --symbolic-full-name @{u}` to get the upstream tracking branch.
+2. If an upstream exists (e.g., `origin/main`), record it as the push target.
+3. If no upstream is configured, record `origin/HEAD` as the intended remote and note that `git push -u origin <branch>` will be used to set upstream on first push.
+4. Run `git -C <repo> remote` to verify at least one remote exists. If no remote is configured, note that push will be skipped and inform the user.
+
+Never force-push. If the push is rejected (non-fast-forward, diverged branches), stop and report the rejection without attempting `--force` or `--force-with-lease`.
 
 ## File Selection
 
@@ -76,6 +87,7 @@ Before asking for final confirmation, show:
 
 - Target repository path
 - Current branch
+- Remote push target (upstream tracking branch or `origin/<branch>` if no upstream)
 - `git status --short`
 - `git diff --stat HEAD` if `HEAD` exists, otherwise the closest useful diff stat
 - Selected files
@@ -87,13 +99,13 @@ If selected files include generated binaries, build outputs, archives, rootfs im
 
 ## Confirmation Gate
 
-Do not run `git add`, `git restore --staged`, or `git commit` until the user has selected files and explicitly confirms.
+Do not run `git add`, `git restore --staged`, `git commit`, or `git push` until the user has selected files and explicitly confirms.
 
-Ask a direct confirmation question that includes the target repository, selected files, and proposed commit message.
+Ask a direct confirmation question that includes the target repository, selected files, proposed commit message, and the remote push target. The confirmation must clearly state that committing will also push to the remote.
 
 Proceed only when the user replies with a clear affirmative such as `yes`, `y`, `确认`, `可以`, or `提交`.
 
-## Commit Procedure
+## Commit and Push Procedure
 
 After confirmation:
 
@@ -103,6 +115,12 @@ After confirmation:
 4. Verify the staged set with `git -C <repo> diff --cached --name-status`.
 5. If the staged set contains anything not selected, stop and report the mismatch.
 6. Create one commit with `git -C <repo> commit -m "<message>"`. Do NOT add any Co-Authored-By or author trailer lines.
-7. Show the resulting commit hash and final `git -C <repo> status --short`.
+7. Show the resulting commit hash.
+8. Push to the remote:
+   - If an upstream tracking branch exists, run `git -C <repo> push`.
+   - If no upstream is configured, run `git -C <repo> push -u origin HEAD` to set upstream on first push.
+   - Never use `--force` or `--force-with-lease`.
+   - If the push is rejected, stop and report the rejection message without retrying.
+9. Show the push result and final `git -C <repo> status --short`.
 
 Never use destructive cleanup commands such as `git reset --hard`, `git checkout --`, or `git clean`.
