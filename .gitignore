@@ -1,3 +1,5 @@
 .DS_Store
 __pycache__/
 *.pyc
+# 本地工作编号配置(用户私有,不入仓库)
+**/work-id.conf

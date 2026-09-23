@@ -81,6 +81,27 @@ The `scope` MUST be the current Git branch name (obtained via `git -C <repo> bra
 
 Keep the message concise and specific. Prefer 15 words or fewer.
 
+The `<body>` above is always generated from the selected files' diff, independent of any prefix chosen later. The final message format is decided in the **Work ID / Bug Prefix** step below — when a work ID or bug number is chosen, the `fix(scope):` prefix is dropped and replaced by `Add #<id>` or `Fix #<bug>`.
+
+## Work ID / Bug Prefix
+
+Before the final confirmation, let the user pick a message prefix via AskUserQuestion (single-select). Read `references/work-id.conf` first: each non-comment, non-empty line is `编号:工作内容描述`. These are the recorded requirement IDs.
+
+Options, in this exact order:
+
+1. Each recorded requirement from `work-id.conf`, labeled `<编号> — <描述>` (e.g. `CMIOTOneOS2026-153 — shell功能支持分区视角隔离`). Selecting one → prefix `Add #<编号>`.
+2. **不带编号** (no prefix) → keep the conventional `fix(scope): <body>` as-is.
+3. **新需求** → prompt the user for a new 编号 and a one-line 描述. Prefix `Add #<新编号>`. After the commit is confirmed and pushed, append a line `新编号:描述` to `work-id.conf` so it appears in the list next time.
+4. **Bug** → prompt the user for a bug number only. Prefix `Fix #<bug号>`. Never write the bug number to any file.
+
+Final message assembly (the `<body>` comes from the diff-based generation above):
+
+- Recorded requirement or 新需求: `Add #<编号> <body>` (drop `fix(scope):`).
+- Bug: `Fix #<bug号> <body>` (drop `fix(scope):`).
+- 不带编号: `fix(scope): <body>` (unchanged, scope = branch name).
+
+The 描述 from `work-id.conf` is only a label for the option list; it never enters the message body. If `work-id.conf` is missing or empty, only options 2/3/4 are offered (no recorded requirements).
+
 ## Required Review
 
 Before asking for final confirmation, show:
@@ -91,7 +112,7 @@ Before asking for final confirmation, show:
 - `git status --short`
 - `git diff --stat HEAD` if `HEAD` exists, otherwise the closest useful diff stat
 - Selected files
-- Proposed commit message
+- Proposed commit message (after the Work ID / Bug Prefix choice is applied)
 
 Inspect enough of the selected diff to ensure the message matches the changes.
 
@@ -99,11 +120,11 @@ If selected files include generated binaries, build outputs, archives, rootfs im
 
 ## Confirmation Gate
 
-Do not run `git add`, `git restore --staged`, `git commit`, or `git push` until the user has selected files and explicitly confirms.
+Do not run `git add`, `git restore --staged`, `git commit`, or `git push` until the user has selected files, chosen a prefix in the Work ID / Bug Prefix step, and explicitly confirms.
 
-Ask a direct confirmation question that includes the target repository, selected files, proposed commit message, and the remote push target. The confirmation must clearly state that committing will also push to the remote.
+Ask a direct confirmation question that includes the target repository, selected files, final commit message (prefix already applied), and the remote push target. The confirmation must clearly state that committing will also push to the remote.
 
-Proceed only when the user replies with a clear affirmative such as `yes`, `y`, `确认`, `可以`, or `提交`.
+Proceed only when the user replies with a clear affirmative such as `yes`, `y`, `确认`, `可以`, or `提交`. If the user chose 新需求, append the new line to `references/work-id.conf` after a successful push.
 
 ## Commit and Push Procedure
 
