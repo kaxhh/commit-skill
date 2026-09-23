@@ -85,14 +85,17 @@ The `<body>` above is always generated from the selected files' diff, independen
 
 ## Work ID / Bug Prefix
 
-Before the final confirmation, let the user pick a message prefix via AskUserQuestion (single-select). Read `references/work-id.conf` first: each non-comment, non-empty line is `编号:工作内容描述`. These are the recorded requirement IDs.
+Before the final confirmation, let the user pick a message prefix via AskUserQuestion (single-select). Read `references/work-id.conf` first: each non-comment, non-empty line is `编号:描述  结束日期` (the date is `YYYY-MM-DD`, separated from the description by whitespace). These are the recorded requirement IDs.
+
+Sort the recorded requirements with non-expired ones first, expired ones after. An item is expired when its 结束日期 is strictly before today (use the system date; if the date is missing or unparseable, treat it as non-expired). Display each requirement option as `<编号> — <描述> (至 <结束日期>)`; expired ones additionally get a `【已过期】` suffix. Selecting any requirement (expired or not) still → prefix `Add #<编号>`.
 
 Options, in this exact order:
 
-1. Each recorded requirement from `work-id.conf`, labeled `<编号> — <描述>` (e.g. `CMIOTOneOS2026-153 — shell功能支持分区视角隔离`). Selecting one → prefix `Add #<编号>`.
-2. **不带编号** (no prefix) → keep the conventional `fix(scope): <body>` as-is.
-3. **新需求** → prompt the user for a new 编号 and a one-line 描述. Prefix `Add #<新编号>`. After the commit is confirmed and pushed, append a line `新编号:描述` to `work-id.conf` so it appears in the list next time.
-4. **Bug** → prompt the user for a bug number only. Prefix `Fix #<bug号>`. Never write the bug number to any file.
+1. Non-expired recorded requirements (sorted, oldest end-date first), labeled `<编号> — <描述> (至 <结束日期>)`.
+2. Expired recorded requirements (sorted, oldest end-date first), labeled `<编号> — <描述> (至 <结束日期>)【已过期】`.
+3. **不带编号** (no prefix) → keep the conventional `fix(scope): <body>` as-is.
+4. **新需求** → prompt the user for a new 编号, a one-line 描述, and a 结束日期 (`YYYY-MM-DD`). Prefix `Add #<新编号>`. After the commit is confirmed and pushed, append a line `新编号:描述  结束日期` to `work-id.conf` so it appears in the list next time.
+5. **Bug** → prompt the user for a bug number only. Prefix `Fix #<bug号>`. Never write the bug number to any file.
 
 Final message assembly (the `<body>` comes from the diff-based generation above):
 
@@ -100,7 +103,7 @@ Final message assembly (the `<body>` comes from the diff-based generation above)
 - Bug: `Fix #<bug号> <body>` (drop `fix(scope):`).
 - 不带编号: `fix(scope): <body>` (unchanged, scope = branch name).
 
-The 描述 from `work-id.conf` is only a label for the option list; it never enters the message body. If `work-id.conf` is missing or empty, only options 2/3/4 are offered (no recorded requirements).
+The 描述 and 结束日期 from `work-id.conf` are only labels for the option list; neither enters the message body. If `work-id.conf` is missing or empty, only options 3/4/5 are offered (no recorded requirements).
 
 ## Required Review
 
